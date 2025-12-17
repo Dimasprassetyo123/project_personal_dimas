@@ -1,20 +1,60 @@
 <?php
-// Database connection
-include "../../config/connection.php";
+// Debug: Cek lokasi file
+echo "<pre>";
+echo "File: " . __FILE__ . "\n";
+echo "Directory: " . __DIR__ . "\n";
+echo "Current dir: " . getcwd() . "\n";
 
+// Database connection - sesuaikan path
+$configPath = __DIR__ . '/../config/connection.php';
+echo "Mencari config di: " . $configPath . "\n";
+
+if (!file_exists($configPath)) {
+    die("ERROR: File config tidak ditemukan!<br>
+         Cari di: $configPath<br>
+         Pastikan file connection.php ada di folder config/");
+}
+
+include $configPath;
+
+// Cek koneksi
+if (!$connect) {
+    die("Koneksi database gagal: " . mysqli_connect_error());
+}
+
+// Test query
+$testQuery = mysqli_query($connect, "SHOW TABLES");
+echo "Jumlah tabel: " . mysqli_num_rows($testQuery) . "\n";
+
+// Cek tabel blogs
+$checkBlogs = mysqli_query($connect, "SHOW TABLES LIKE 'blogs'");
+if (mysqli_num_rows($checkBlogs) == 0) {
+    die("ERROR: Tabel 'blogs' tidak ditemukan di database!");
+}
+
+echo "Tabel blogs ditemukan!\n";
+echo "</pre>";
+
+// Query blogs
 $qBlog = "SELECT * FROM blogs ORDER BY date DESC";
-$result = mysqli_query($connect, $qBlog) or die(mysqli_error($connect));
+$result = mysqli_query($connect, $qBlog);
+
+if (!$result) {
+    die("Error query: " . mysqli_error($connect));
+}
+
+$blogCount = mysqli_num_rows($result);
+echo "<p>Jumlah blog ditemukan: $blogCount</p>";
 ?>
 
 <style>
-    /* Container utama */
+    /* CSS tetap sama seperti sebelumnya */
     #blogs {
         padding: 40px 0;
         background: #f9f9f9;
         font-family: Arial, sans-serif;
     }
 
-    /* Judul section */
     .section-title h2 {
         text-align: center;
         font-size: 28px;
@@ -30,7 +70,6 @@ $result = mysqli_query($connect, $qBlog) or die(mysqli_error($connect));
         margin: 0 auto 30px;
     }
 
-    /* Grid blog */
     .blog-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -40,7 +79,6 @@ $result = mysqli_query($connect, $qBlog) or die(mysqli_error($connect));
         padding: 0 15px;
     }
 
-    /* Card blog */
     .blog-card {
         background: #fff;
         border-radius: 10px;
@@ -56,7 +94,6 @@ $result = mysqli_query($connect, $qBlog) or die(mysqli_error($connect));
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
 
-    /* Gambar blog */
     .blog-img-container {
         width: 100%;
         height: 180px;
@@ -74,7 +111,6 @@ $result = mysqli_query($connect, $qBlog) or die(mysqli_error($connect));
         transform: scale(1.05);
     }
 
-    /* Konten blog */
     .blog-content {
         padding: 15px;
         flex: 1;
@@ -103,8 +139,7 @@ $result = mysqli_query($connect, $qBlog) or die(mysqli_error($connect));
         flex: 1;
     }
 
-    /* Tombol kembali */
-    .back-btn {
+    .back-btn, .btn-primary {
         display: inline-block;
         background: #007bff;
         color: #fff;
@@ -113,25 +148,11 @@ $result = mysqli_query($connect, $qBlog) or die(mysqli_error($connect));
         text-decoration: none;
         font-size: 14px;
         transition: background 0.2s ease;
+        text-align: center;
     }
 
-    .back-btn:hover {
+    .back-btn:hover, .btn-primary:hover {
         background: #0056b3;
-    }
-
-    .btn-primary {
-        background-color: #007bff;
-        color: white;
-        padding: 6px 12px;
-        border-radius: 6px;
-        text-decoration: none;
-        font-size: 14px;
-        display: inline-block;
-        transition: background 0.2s ease;
-    }
-
-    .btn-primary:hover {
-        background-color: #0056b3;
     }
 </style>
 
@@ -149,33 +170,48 @@ $result = mysqli_query($connect, $qBlog) or die(mysqli_error($connect));
     <div class="blog-grid">
         <?php if (mysqli_num_rows($result) > 0): ?>
             <?php while ($item = mysqli_fetch_assoc($result)):
-                $imagePath = "../../storages/blog/" . $item['image'];
-                $fallbackImage = "../../storages/blog/default.jpg";
+                // PERBAIKAN PATH GAMBAR
+                $imagePath = "../storages/blog/" . $item['image'];
+                $fallbackImage = "../storages/blog/default.jpg";
+                
+                // Debug path gambar
+                $fullImagePath = __DIR__ . '/../storages/blog/' . $item['image'];
+                $fullFallbackPath = __DIR__ . '/../storages/blog/default.jpg';
+                
+                echo "<!-- Debug: $imagePath -->\n";
+                echo "<!-- File exists: " . (file_exists($fullImagePath) ? 'YES' : 'NO') . " -->\n";
             ?>
                 <div class="blog-card">
                     <div class="blog-img-container">
                         <img src="<?= $imagePath ?>"
-                            alt="<?= ($item['tittle']) ?>"
-                            onerror="this.src='<?= $fallbackImage ?>'">
+                            alt="<?= htmlspecialchars($item['tittle']) ?>"
+                            onerror="this.src='<?= $fallbackImage ?>'; console.log('Gambar gagal: <?= $imagePath ?>')">
                     </div>
                     <div class="blog-content">
-                        <h3 class="blog-title"><?= ($item['tittle']) ?></h3>
+                        <h3 class="blog-title"><?= htmlspecialchars($item['tittle']) ?></h3>
                         <div class="blog-meta">
-                            <?= date("d M Y", strtotime($item['date'])) ?> | <?= ($item['author']) ?>
+                            <?= date("d M Y", strtotime($item['date'])) ?> | <?= htmlspecialchars($item['author']) ?>
                         </div>
                         <p class="blog-desc">
                             <?= substr(strip_tags($item['description']), 0, 80) ?>...
                         </p>
-                        <a href="../sections/detaile_blog.php?id=<?= $item['id'] ?>" class="btn-primary text-center">
+                        <!-- PERBAIKAN PATH DETAIL BLOG -->
+                        <a href="details_blog.php?id=<?= $item['id'] ?>" class="btn-primary">
                             Detail
                         </a>
                     </div>
                 </div>
             <?php endwhile; ?>
         <?php else: ?>
-            <div style="grid-column:1/-1; text-align:center; color:#666;">
-                Tidak ada blog tersedia.
+            <div style="grid-column:1/-1; text-align:center; color:#666; padding: 40px;">
+                <h3>Tidak ada blog tersedia.</h3>
+                <p>Silakan tambahkan blog melalui admin panel.</p>
             </div>
         <?php endif; ?>
     </div>
 </section>
+
+<?php
+// Tutup koneksi
+mysqli_close($connect);
+?>
