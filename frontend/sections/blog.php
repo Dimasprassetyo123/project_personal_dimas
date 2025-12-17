@@ -216,7 +216,7 @@ $result = mysqli_query($connect, $qBlogs) or die(mysqli_error($connect));
             <?php endwhile; ?>
         </div>
         <div class="text-center mt-5">
-            <a href="../../../../../Folder PKL LAUWBA/PHP/project_personal_dimas/frontend/sections/list_blog.php"
+            <a href="frontend/sections/list_blog.php"
                 class="btn btn-primary btn-lg px-5">
                 <i class="bi bi-grid-3x3-gap me-2"></i>Selengkapnya
             </a>
