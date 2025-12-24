@@ -4,15 +4,11 @@ include 'partials/header.php';
 
 <body class="index-page">
 
-  <header id="header" class="header d-flex flex-column justify-content-center">
-
-    <i class="header-toggle d-xl-none bi bi-list"></i>
 
     <?php
-        include 'partials/sidebar.php';
+        include 'partials/navbar.php';
     ?>
 
-  </header>
 
   <main class="main">
 
